@@ -1,0 +1,7 @@
+Refactoring Hyperparameters in src/model.py:
+
+* Replaced hardcoded global hyperparameters with a `GPTConfig` dataclass.
+* Updated `GPTLanguageModel`, `Block`, `MultiHeadAttention`, `Head`, and `FeedFoward` to accept a `config` object instead of relying on global variables.
+* This improves maintainability and reusability, allowing different model configurations to be instantiated easily.
+* The refactoring required updates to `src/engine.py` and `src/main.py` to instantiate the model with a configuration object.
+* `src/model.py` was also rescued from a corrupted state where it contained a shell script. The content was split into `src/data.py`, `src/engine.py`, and `src/main.py`.
