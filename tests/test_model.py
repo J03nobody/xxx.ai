@@ -1,52 +1,34 @@
+import unittest
 import torch
-import torch.nn as nn
-from src.model import FeedFoward
+from src.model import GPTLanguageModel
 
-def test_feed_forward_initialization():
-    n_embd = 128
-    model = FeedFoward(n_embd)
+class TestGPTLanguageModel(unittest.TestCase):
+    def setUp(self):
+        self.model = GPTLanguageModel(
+            vocab_size=100,
+            block_size=8,
+            n_embd=16,
+            n_head=2,
+            n_layer=2
+        )
 
-    # Check if the network is a Sequential container
-    assert isinstance(model.net, nn.Sequential)
+    def test_forward_pass(self):
+        x = torch.randint(0, 100, (2, 8))
+        logits, loss = self.model(x)
+        self.assertEqual(logits.shape, (2, 8, 100))
+        self.assertIsNone(loss)
 
-    # Check layer structure: Linear -> ReLU -> Linear -> Dropout
-    assert len(model.net) == 4
-    assert isinstance(model.net[0], nn.Linear)
-    assert isinstance(model.net[1], nn.ReLU)
-    assert isinstance(model.net[2], nn.Linear)
-    assert isinstance(model.net[3], nn.Dropout)
+    def test_forward_pass_with_targets(self):
+        x = torch.randint(0, 100, (2, 8))
+        y = torch.randint(0, 100, (2, 8))
+        logits, loss = self.model(x, y)
+        self.assertEqual(logits.shape, (16, 100)) # Reshaped for loss calculation
+        self.assertIsNotNone(loss)
 
-    # Check dimensions
-    assert model.net[0].in_features == n_embd
-    assert model.net[0].out_features == 4 * n_embd
-    assert model.net[2].in_features == 4 * n_embd
-    assert model.net[2].out_features == n_embd
+    def test_generate(self):
+        x = torch.zeros((1, 1), dtype=torch.long)
+        y = self.model.generate(x, max_new_tokens=5)
+        self.assertEqual(y.shape, (1, 6))
 
-def test_feed_forward_forward_pass():
-    batch_size = 2
-    seq_len = 10
-    n_embd = 32
-
-    model = FeedFoward(n_embd)
-    x = torch.randn(batch_size, seq_len, n_embd)
-
-    output = model(x)
-
-    # Check output shape
-    assert output.shape == (batch_size, seq_len, n_embd)
-
-    # Check that output is not NaN
-    assert not torch.isnan(output).any()
-
-def test_feed_forward_computation():
-    # Simple deterministic test
-    n_embd = 4
-    model = FeedFoward(n_embd)
-
-    # Set weights to known values for deterministic output testing if needed,
-    # but for now we just verify it runs without error on simple inputs
-    x = torch.ones(1, 1, n_embd)
-    output = model(x)
-
-    assert output.shape == (1, 1, n_embd)
-    assert torch.is_tensor(output)
+if __name__ == '__main__':
+    unittest.main()
