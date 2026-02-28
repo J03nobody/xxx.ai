@@ -1,10 +1,20 @@
 import torch
+import os
+import kagglehub
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
 class DataManager:
-    def __init__(self, dataset_name="wikitext", config_name="wikitext-2-raw-v1", split="train", tokenizer_name="gpt2", batch_size=32, block_size=64):
-        self.dataset = load_dataset(dataset_name, config_name, split=split, streaming=True)
+    def __init__(self, dataset_name="wikitext", config_name="wikitext-2-raw-v1", split="train", tokenizer_name="gpt2", batch_size=32, block_size=64, kaggle_dataset=None, text_column="text"):
+        if kaggle_dataset:
+            path = kagglehub.dataset_download(kaggle_dataset)
+            files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.csv')]
+            if not files:
+                raise ValueError(f"No CSV files found in kaggle dataset {kaggle_dataset} at {path}")
+            self.dataset = load_dataset('csv', data_files=files, split=split, streaming=True)
+        else:
+            self.dataset = load_dataset(dataset_name, config_name, split=split, streaming=True)
+        self.text_column = text_column
         self.dataset_iterator = iter(self.dataset)
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         if self.tokenizer.pad_token is None:
@@ -22,7 +32,9 @@ class DataManager:
                 self.dataset_iterator = iter(self.dataset)
                 item = next(self.dataset_iterator)
 
-            text = item['text']
+            text = item.get(self.text_column, "")
+            if not text or not isinstance(text, str):
+                continue
             encoded = self.tokenizer.encode(text)
 
             if len(encoded) > self.block_size:
