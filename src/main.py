@@ -2,29 +2,33 @@ import torch
 import time
 from src.data import DataManager
 from src.engine import EvolutionEngine
-from src.config import GPTConfig
 
 def main():
     # Configuration
-    # Instantiate config with defaults or env overrides
-    config = GPTConfig()
-
-    # Population size is an engine parameter, not strictly a model hyperparam, but could be in config if desired.
-    # For now, keep it as local var or could be added to config.
     population_size = 2
+    block_size = 64
+    batch_size = 32
+    n_embd = 64
+    n_head = 4
+    n_layer = 4
 
     # Simulate a "continuous" protocol by running for a fixed number of generations for this demo
     generations = 5
     steps_per_generation = 10
 
     print("Initializing Data Manager...")
-    dm = DataManager(block_size=config.block_size, batch_size=config.batch_size)
-
-    # Update vocab_size in config based on tokenizer
-    config.vocab_size = dm.get_vocab_size()
+    dm = DataManager(block_size=block_size, batch_size=batch_size)
+    vocab_size = dm.get_vocab_size()
 
     print(f"Initializing Evolution Engine with population size {population_size}...")
-    engine = EvolutionEngine(config=config, population_size=population_size)
+    engine = EvolutionEngine(
+        population_size=population_size,
+        vocab_size=vocab_size,
+        block_size=block_size,
+        n_embd=n_embd,
+        n_head=n_head,
+        n_layer=n_layer
+    )
 
     print("Starting continuous training protocol...")
 
@@ -77,7 +81,7 @@ def main():
     # Let's encode a prompt.
     prompt = "Once upon a time"
     # Ensure input_ids is on the correct device
-    input_ids = torch.tensor(dm.tokenizer.encode(prompt), dtype=torch.long).unsqueeze(0).to(config.device)
+    input_ids = torch.tensor(dm.tokenizer.encode(prompt), dtype=torch.long).unsqueeze(0).to(engine.device)
 
     with torch.no_grad():
         output_ids = model.generate(input_ids, max_new_tokens=50)
