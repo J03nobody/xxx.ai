@@ -17,7 +17,12 @@ def main():
     steps_per_generation = 10
 
     print("Initializing Data Manager...")
-    dm = DataManager(block_size=block_size, batch_size=batch_size)
+    dm = DataManager(
+        block_size=block_size,
+        batch_size=batch_size,
+        kaggle_dataset='arnabchaki/popular-video-games-1980-2023',
+        text_column='Summary'
+    )
     vocab_size = dm.get_vocab_size()
 
     print(f"Initializing Evolution Engine with population size {population_size}...")
