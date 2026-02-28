@@ -3,7 +3,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 class DataManager:
-    def __init__(self, dataset_name="roneneldan/TinyStories", config_name=None, split="train", tokenizer_name="gpt2", batch_size=32, block_size=64):
+    def __init__(self, dataset_name="wikitext", config_name="wikitext-2-raw-v1", split="train", tokenizer_name="gpt2", batch_size=32, block_size=64):
         self.dataset = load_dataset(dataset_name, config_name, split=split, streaming=True)
         self.dataset_iterator = iter(self.dataset)
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
@@ -22,7 +22,6 @@ class DataManager:
                 self.dataset_iterator = iter(self.dataset)
                 item = next(self.dataset_iterator)
 
-            # TinyStories has a 'text' column, verified by inspection
             text = item['text']
             encoded = self.tokenizer.encode(text)
 

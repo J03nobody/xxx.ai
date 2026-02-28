@@ -1,4 +1,5 @@
 import torch
+import time
 from src.data import DataManager
 from src.engine import EvolutionEngine
 

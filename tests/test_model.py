@@ -1,62 +1,34 @@
+import unittest
 import torch
-import pytest
 from src.model import GPTLanguageModel
-from src.data import DataManager
 
-def test_model_initialization():
-    vocab_size = 100
-    block_size = 32
-    n_embd = 32
-    n_head = 4
-    n_layer = 2
+class TestGPTLanguageModel(unittest.TestCase):
+    def setUp(self):
+        self.model = GPTLanguageModel(
+            vocab_size=100,
+            block_size=8,
+            n_embd=16,
+            n_head=2,
+            n_layer=2
+        )
 
-    model = GPTLanguageModel(vocab_size=vocab_size, block_size=block_size, n_embd=n_embd, n_head=n_head, n_layer=n_layer)
-    assert isinstance(model, GPTLanguageModel)
+    def test_forward_pass(self):
+        x = torch.randint(0, 100, (2, 8))
+        logits, loss = self.model(x)
+        self.assertEqual(logits.shape, (2, 8, 100))
+        self.assertIsNone(loss)
 
-    # Check if parameters are initialized
-    assert len(list(model.parameters())) > 0
+    def test_forward_pass_with_targets(self):
+        x = torch.randint(0, 100, (2, 8))
+        y = torch.randint(0, 100, (2, 8))
+        logits, loss = self.model(x, y)
+        self.assertEqual(logits.shape, (16, 100)) # Reshaped for loss calculation
+        self.assertIsNotNone(loss)
 
-def test_model_forward_pass():
-    vocab_size = 100
-    block_size = 32
-    n_embd = 32
-    n_head = 4
-    n_layer = 2
-    batch_size = 4
+    def test_generate(self):
+        x = torch.zeros((1, 1), dtype=torch.long)
+        y = self.model.generate(x, max_new_tokens=5)
+        self.assertEqual(y.shape, (1, 6))
 
-    model = GPTLanguageModel(vocab_size=vocab_size, block_size=block_size, n_embd=n_embd, n_head=n_head, n_layer=n_layer)
-
-    # Create dummy input
-    idx = torch.randint(0, vocab_size, (batch_size, block_size))
-
-    # Forward pass
-    logits, loss = model(idx)
-
-    assert logits.shape == (batch_size, block_size, vocab_size)
-    assert loss is None
-
-def test_model_training_step():
-    vocab_size = 100
-    block_size = 32
-    n_embd = 32
-    n_head = 4
-    n_layer = 2
-    batch_size = 4
-
-    model = GPTLanguageModel(vocab_size=vocab_size, block_size=block_size, n_embd=n_embd, n_head=n_head, n_layer=n_layer)
-
-    # Create dummy input and targets
-    idx = torch.randint(0, vocab_size, (batch_size, block_size))
-    targets = torch.randint(0, vocab_size, (batch_size, block_size))
-
-    # Forward pass with targets
-    logits, loss = model(idx, targets)
-
-    assert loss is not None
-    assert isinstance(loss.item(), float)
-
-def test_data_manager_initialization():
-    # Mocking load_dataset would be ideal, but for integration testing we can check if it initializes
-    # We use a dummy name if we don't want to download data, but here we want to test the actual class logic.
-    # We can skip the actual dataset loading part for unit testing by mocking, or use a very small subset.
-    pass
+if __name__ == '__main__':
+    unittest.main()
