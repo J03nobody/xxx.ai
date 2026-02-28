@@ -3,18 +3,18 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # Hyperparameters
-batch_size = 32
-block_size = 64
-max_iters = 5000
-eval_interval = 500
-learning_rate = 3e-4
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-eval_iters = 200
-n_embd = 128
-n_head = 4
-n_layer = 4
+# batch_size = 32 # These are now passed in or handled by the engine/main
+# block_size = 64
+# max_iters = 5000
+# eval_interval = 500
+# learning_rate = 3e-4
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# eval_iters = 200
+# n_embd = 128
+# n_head = 4
+# n_layer = 4
 dropout = 0.2
-vocab_size = 50304 # GPT-2 vocab size roughly
+# vocab_size = 50304 # GPT-2 vocab size roughly
 
 class Head(nn.Module):
     """ one head of self-attention """
@@ -93,7 +93,7 @@ class Block(nn.Module):
 
 class GPTLanguageModel(nn.Module):
 
-    def __init__(self, vocab_size=vocab_size, block_size=block_size, n_embd=n_embd, n_head=n_head, n_layer=n_layer):
+    def __init__(self, vocab_size, block_size, n_embd, n_head, n_layer):
         super().__init__()
         self.block_size = block_size
         # each token directly reads off the logits for the next token from a lookup table
