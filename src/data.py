@@ -1,10 +1,25 @@
+import os
 import torch
+import kagglehub
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
 class DataManager:
-    def __init__(self, dataset_name="wikitext", config_name="wikitext-2-raw-v1", split="train", tokenizer_name="gpt2", batch_size=32, block_size=64):
-        self.dataset = load_dataset(dataset_name, config_name, split=split, streaming=True)
+    def __init__(self, dataset_name="abhinavmoudgil95/short-jokes", config_name=None, split="train", tokenizer_name="gpt2", batch_size=32, block_size=64):
+        # Download dataset from Kaggle
+        path = kagglehub.dataset_download(dataset_name)
+        # Find the CSV file in the downloaded path
+        csv_file = None
+        for f in os.listdir(path):
+            if f.endswith('.csv'):
+                csv_file = os.path.join(path, f)
+                break
+
+        if not csv_file:
+            raise FileNotFoundError(f"No CSV file found in downloaded dataset path: {path}")
+
+        # Load the CSV file as a HuggingFace dataset
+        self.dataset = load_dataset("csv", data_files=csv_file, split=split, streaming=True)
         self.dataset_iterator = iter(self.dataset)
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         if self.tokenizer.pad_token is None:
@@ -22,7 +37,7 @@ class DataManager:
                 self.dataset_iterator = iter(self.dataset)
                 item = next(self.dataset_iterator)
 
-            text = item['text']
+            text = item.get('Joke', '')
             encoded = self.tokenizer.encode(text)
 
             if len(encoded) > self.block_size:
